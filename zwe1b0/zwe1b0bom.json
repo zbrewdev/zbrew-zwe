@@ -4,14 +4,59 @@
 		"relid":"ZWE1B0",
 		"datasets":[ 
 			{
-				"dsname":"SIGYHFS",
-				"dstype":"ZFS",
+				"dsname":"SZWEAUTH",
+				"dstype":"PDSE",
 				"primary":30, 
 				"secondary":15, 
+				"recfm":"U", 
+				"lrecl":32760, 
+				"zones":["T"]
+			},
+			{
+				"dsname":"SZWESAMP",
+				"dstype":"PDSE",
+				"primary":15, 
+				"secondary":5, 
+				"recfm":"FB", 
+				"lrecl":80, 
+				"zones":["T"]
+			},
+			{
+				"dsname":"AZWEZFS",
+				"dstype":"ZFS",
+				"primary":21000, 
+				"secondary":2100, 
 				"zones":["T"],
 				"dddefpath":"usr/lpp/zowe/bin/IBM/",
 				"mountpnt":"usr/lpp/zowe/",
-				"leaves":""
+				"leaves":"SMPE"
+			}
+			{
+				"dsname":"AZWEAUTH",
+				"dstype":"PDSE",
+				"primary":30, 
+				"secondary":15, 
+				"recfm":"U", 
+				"lrecl":32760, 
+				"zones":["D"]
+			},
+			{
+				"dsname":"AZWESAMP",
+				"dstype":"PDSE",
+				"primary":15, 
+				"secondary":5, 
+				"recfm":"FB", 
+				"lrecl":80, 
+				"zones":["D"]
+			},
+			{
+				"dsname":"AZWEZFS",
+				"dstype":"LIBRARY",
+				"primary":12000, 
+				"secondary":3000, 
+				"recfm":"VB", 
+				"lrecl":6995, 
+				"zones":["D"]
 			}
 		]
 	}
