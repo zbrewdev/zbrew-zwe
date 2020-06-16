@@ -22,7 +22,7 @@
 				"zones":["T"]
 			},
 			{
-				"dsname":"AZWEZFS",
+				"dsname":"SZWEZFS",
 				"dstype":"ZFS",
 				"primary":21000, 
 				"secondary":2100, 
@@ -30,7 +30,7 @@
 				"dddefpath":"usr/lpp/zowe/bin/IBM/",
 				"mountpnt":"usr/lpp/zowe/",
 				"leaves":"SMPE"
-			}
+			},
 			{
 				"dsname":"AZWEAUTH",
 				"dstype":"PDSE",
@@ -51,7 +51,7 @@
 			},
 			{
 				"dsname":"AZWEZFS",
-				"dstype":"LIBRARY",
+				"dstype":"PDSE",
 				"primary":12000, 
 				"secondary":3000, 
 				"recfm":"VB", 
