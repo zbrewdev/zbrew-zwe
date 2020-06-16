@@ -1,0 +1,50 @@
+{ 
+	"software": [{ 
+		"relid":"ZWE1B0", 
+		"description":"Zowe 1.11.0",
+		"prereq":
+		[
+			{  
+			"prodid":"CEE",
+			"description":"Language Environment",
+			"release":
+			[
+				{
+				"relid":"ZOS220",
+				"fmids": [
+					{
+					"fmid":"HLE77A0",
+					"description":"Language environment for z/OS 2.2",
+					"ptfs": [ 
+					]
+					}
+				]
+				},
+				{  
+				"relid":"ZOS230",
+				"fmids": [
+					{
+					"fmid":"HLE77B0",
+					"description":"Language environment for z/OS 2.3",
+					"ptfs":	[ 
+					]
+					}
+				]
+				},
+				{  
+				"relid":"ZOS240",
+				"fmids": [
+					{
+					"fmid":"HLE77C0",
+					"description":"Language environment for z/OS 2.4",
+					"ptfs":	[
+					 ]
+					}
+				]
+				}
+			]
+			}
+		],
+		"coreq": []
+	}] 
+}
