@@ -29,7 +29,7 @@
 				"zones":["T"],
 				"dddefpath":"usr/lpp/zowe/bin/IBM/",
 				"mountpnt":"usr/lpp/zowe/",
-				"leaves":"SMPE"
+				"leaves":"bin/IBM"
 			},
 			{
 				"dsname":"AZWEAUTH",
