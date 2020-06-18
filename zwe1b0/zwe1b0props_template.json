@@ -1,0 +1,29 @@
+{
+ 	"software": [{
+		"relid":"ZWE1B0",
+		"props":{
+			"ZWE1B0_ADMINGRP": "ZWEADMIN",
+			"ZWE1B0_STCGRP":   "ZWEADMIN",
+			"ZWE1B0_ZOWEUSER": "ZWESVUSR",
+			"ZWE1B0_XMEMUSER": "ZWESIUSR",
+			"ZWE1B0_AUXUSER":  "ZWESIUSR",
+			"ZWE1B0_ZOWESTC":  "ZWESVSTC",
+			"ZWE1B0_XMEMSTC":  "ZWESISTC",
+			"ZWE1B0_AUXSTC":   "ZWESASTC",
+			"ZWE1B0_HLQ":      "ZWE",
+			"ZWE1B0_SYSPROG":  "ZWEADMIN",
+
+			"ZWE1B0_ADMINGID": "",
+			"ZWE1B0_STCGID":   "",
+			"ZWE1B0_ZOWEUID":  "",
+			"ZWE1B0_XMEMUID":  "",
+			"ZWE1B0_AUXUID":   "",
+
+			"ZWE1B0_ADMINDEP": "",
+			"ZWE1B0_STCGDEP":  "",
+			"ZWE1B0_STCUDEP":  "",
+			"ZWE1B0_FACACID":  ""
+                 }
+	}]
+}
+

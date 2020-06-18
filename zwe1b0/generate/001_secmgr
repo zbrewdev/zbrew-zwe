@@ -2,6 +2,7 @@
 # Generate SECMGR commands for RACF, ACF2 or TSS
 # JCL below to be converted to script
 #
+echo >/dev/null <<zzz
 //         EXPORT SYMLIST=*
 //*
 //         SET  PRODUCT=RACF         * RACF, ACF2, or TSS
@@ -545,3 +546,6 @@ $$
 PROFILE
 $$
 //*
+zzz
+exit 0
+
