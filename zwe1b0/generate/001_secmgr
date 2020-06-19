@@ -635,6 +635,24 @@ SetupRACF() {
 	racfPermitUsers "UNIXPRIV" "SUPERUSER.FILESYS" "CONTROL" "$ZWE1B0_ZOWEUSER" 
 	chk "$?" "Unable to configure ZWE1B0"
 
+	if ! `racfGroupExists $ZWE1B0_HLQ` ; then
+		issueTSO "ADDGROUP $ZWE1B0_HLQ DATA('Zowe -HLQ STUB')"
+		chk "$?" "Unable to add group $ZWE1B0_HLQ"
+	fi
+	if `racfEnhancedGenericNamingInEffect`; then
+		wildcard="*.**"
+	else
+		wildcard="*"
+	fi
+
+	if ! `racfDatasetProfileExists "$ZWE1B0_HLQ.$wildcard"`; then
+		issueTSO "ADDSD  '$ZWE1B0_HLQ.$wildcard' UACC(READ) DATA('Zowe')"
+		chk "$?" "Unable to add dataset profile $ZWE1B0_HLQ"
+
+		racfPermitUsers "DATASET" "'$ZWE1B0_HLQ.$wildcard'" "ALTER" "$ZWE1B0_SYSPROG"
+		chk "$?" "Unable to configure ZWE1B0"
+	fi
+
 	return 0
 }
 EOF
