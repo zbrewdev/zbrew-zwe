@@ -547,5 +547,115 @@ PROFILE
 $$
 //*
 zzz
+
+if ! [ $# -eq 2 ]; then
+	echo "Syntax: 001_secmgr ENABLE|DISABLE <output-script>" >&2
+	exit 8
+fi
+
+verb="$1"
+script="$2"
+zbrew=`whence zbrew`
+zbrewdir=${zbrew%/*}
+zbrewroot=${zbrewdir%/*}
+
+cat <<'EOF' >${script}
+#!/bin/sh
+SetupRACF() {
+	racfSetGenericClasses "FACILITY UNIXPRIV"
+	chk "$?" "Unable to configure ZWE1B0"
+
+	racfActivateAndShareClasses "FACILITY UNIXPRIV"
+	chk "$?" "Unable to configure ZWE1B0"
+
+        if ! `racfGroupExists $ZWE1B0_ADMINGRP` ; then
+                issueTSO "RDEFINE STARTED ** STDATA(USER(=MEMBER) GROUP($ZWE1B0_ADMINGRP))"
+                chk "$?" "Unable to define $ZWE1B0_ADMINGRP"
+	#msf - need to check if AUTOGID is enabled. If not, use ZWE1B0_ADMINGID
+		issueTSO "ADDGROUP $ZWE1B0_ADMINGRP OMVS(AUTOGID) DATA('Zowe Administrators')"
+		chk "$?" "Unable to add group with OMVS segment for Zowe Administrators" 
+  	fi
+
+        if ! `racfGroupExists $ZWE1B0_STCGROUP` ; then
+                issueTSO "RDEFINE STARTED ** STDATA(USER(=MEMBER) GROUP($ZWE1B0_STCGROUP))"
+                chk "$?" "Unable to define $ZWE1B0_STCGROUP"
+	#msf - need to check if AUTOGID is enabled. If not, use ZWE1B0_STCGID
+		issueTSO "ADDGROUP $ZWE1B0_STCGROUP OMVS(AUTOGID) DATA('Started Task Group with OMVS Segment')"
+		chk "$?" "Unable to add group with OMVS segment for started tasks"
+  	fi
+
+        tsocmd "DELUSER $ZWE1B0_ZOWEUSER" >/dev/null 2>&1
+#msf - need to check if AUTOUID is enabled. If not, use ZWE1B0_ZOWEUID
+	issueTSO "ADDUSER $ZWE1B0_ZOWEUSER DFLTGRP($ZWE1B0_STCGROUP) NOPASSWORD NAME('Zowe Server') OMVS(AUTOUID HOME(/tmp) PROGRAM(/bin/sh) ) DATA('Zowe Main Server')"
+  	chk "$?" "Unable to create user $ZWE1B0_ZOWEUSER"
+
+        tsocmd "DELUSER $ZWE1B0_XMEMUSER" >/dev/null 2>&1
+#msf - need to check if AUTOUID is enabled. If not, use ZWE1B0_XMEMUID
+	issueTSO "ADDUSER $ZWE1B0_XMEMUSER DFLTGRP($ZWE1B0_STCGROUP) NOPASSWORD NAME('Zowe XMEM Server') OMVS(AUTOUID HOME(/tmp) PROGRAM(/bin/sh) ) DATA('Zowe XMEM Cross Memory Server')"
+  	chk "$?" "Unable to create user $ZWE1B0_XMEMUSER"
+
+        tsocmd "DELUSER $ZWE1B0_AUXUSER" >/dev/null 2>&1
+#msf - need to check if AUTOUID is enabled. If not, use ZWE1B0_AUXUID
+	issueTSO "ADDUSER $ZWE1B0_AUXUSER DFLTGRP($ZWE1B0_STCGROUP) NOPASSWORD NAME('Zowe XMEM AUX Server') OMVS(AUTOUID HOME(/tmp) PROGRAM(/bin/sh) ) DATA('Zowe XMEM AUX Cross Memory Server')"
+  	chk "$?" "Unable to create user $ZWE1B0_AUXUSER"
+
+	if ! `racfProfileExists "STARTED" "$ZWE1B0_ZOWESTC.*"`; then
+		issueTSO "RDEFINE STARTED $ZWE1B0_ZOWESTC.* STDATA(USER($ZWE1B0_ZOWEUSER) GROUP($ZWE1B0_STCGROUP) TRUSTED(NO)) DATA('Zowe Main Server')"
+		chk "$?" "Unable to define started task $ZWE1B0_ZOWESTC"
+	fi
+
+	if ! `racfProfileExists "STARTED" "$ZWE1B0_XMEMSTC.*"`; then
+		issueTSO "RDEFINE STARTED $ZWE1B0_XMEMSTC.* STDATA(USER($ZWE1B0_XMEMUSER) GROUP($ZWE1B0_STCGROUP) TRUSTED(NO)) DATA('Zowe XMEM Cross Memory Server')"
+		chk "$?" "Unable to define started task $ZWE1B0_XMEMSTC"
+	fi
+
+	if ! `racfProfileExists "STARTED" "$ZWE1B0_AUXSTC.*"`; then
+		issueTSO "RDEFINE STARTED $ZWE1B0_AUXSTC.* STDATA(USER($ZWE1B0_AUXUSER) GROUP($ZWE1B0_STCGROUP) TRUSTED(NO)) DATA('Zowe XMEM Aux Cross Memory Server')"
+		chk "$?" "Unable to define started task $ZWE1B0_XMEMSTC"
+	fi
+
+        if ! `racfProfileExists "FACILITY" "ZWEIS.IS"` ; then
+	        issueTSO "RDEFINE FACILITY ZWEIS.IS UACC(NONE)"
+  		chk "$?" "Unable to define profile ZWEIS.IS"
+        fi
+	racfPermitUsers "FACILITY" "ZWEIS.IS" "READ" "$ZWE1B0_ZOWEUSER" 
+	chk "$?" "Unable to configure ZWE1B0"
+
+        if ! `racfProfileExists "FACILITY" "BPX.SERVER"` ; then
+	        issueTSO "RDEFINE FACILITY BPX.SERVER UACC(NONE)"
+  		chk "$?" "Unable to define profile BPX.SERVER"
+        fi
+	racfPermitUsers "FACILITY" "BPX.SERVER" "READ" "$ZWE1B0_ZOWEUSER" 
+	chk "$?" "Unable to configure ZWE1B0"
+
+        if ! `racfProfileExists "UNIXPRIV" "SUPERUSER.FILESYS"` ; then
+	        issueTSO "RDEFINE UNIXPRIV SUPERUSER.FILESYS UACC(NONE)"
+  		chk "$?" "Unable to define profile SUPERUSER.FILESYS"
+        fi
+	racfPermitUsers "UNIXPRIV" "SUPERUSER.FILESYS" "CONTROL" "$ZWE1B0_ZOWEUSER" 
+	chk "$?" "Unable to configure ZWE1B0"
+
+	return 0
+}
+EOF
+
+chmod u+x "${script}"
+cat << EOF >>${script}
+export PATH=${zbrewdir}:\$PATH
+. zbrewsetswenv zwe1b0
+#set -x
+sp=\`secmgr\`
+if [ "\${sp}" = "RCVT"	]; then
+	SetupRACF
+elif [ "\${sp}" = "TSS" ]; then
+	SetupTopSecret
+elif [ "\${sp}" = "ACF2" ]; then
+	SetupACF2
+else
+	echo "Error: Unsupported security manager: ${sp}" >&2
+	exit 16
+fi
+exit $?
+EOF
 exit 0
 

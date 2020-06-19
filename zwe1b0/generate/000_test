@@ -1,3 +1,0 @@
-#!/bin/sh
-. zbrewsetswenv zwe1b0
-echo $ZWE1B0_ADMINGRP
