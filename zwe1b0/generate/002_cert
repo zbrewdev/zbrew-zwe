@@ -1,2 +1,32 @@
 #!/bin/sh
-# Add code to configure zowe certificates
+
+if ! [ $# -eq 2 ]; then
+	echo "Syntax: 002_cert ENABLE|DISABLE <output-script>" >&2
+	exit 8
+fi
+
+verb="$1"
+script="$2"
+zbrew=`whence zbrew`
+zbrewdir=${zbrew%/*}
+zbrewroot=${zbrewdir%/*}
+
+cat <<'EOF' >${script}
+#!/bin/sh
+SetupCertificates() {
+	export ZOWE_ROOT="${ZBREW_TGT_ZFSROOT}/usr/lpp/zowe/"
+	ls $ZOWE_ROOT
+	return 0
+}
+
+EOF
+
+chmod u+x "${script}"
+cat << EOF >>${script}
+export PATH=${zbrewdir}:\$PATH
+. zbrewsetswenv zwe1b0
+#set -x
+SetupCertificates  
+exit $?
+EOF
+exit 0

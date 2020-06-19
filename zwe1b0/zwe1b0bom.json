@@ -27,9 +27,9 @@
 				"primary":21000, 
 				"secondary":2100, 
 				"zones":["T"],
-				"dddefpath":"usr/lpp/zowe/bin/IBM/",
+				"dddefpath":"usr/lpp/zowe/IBM/",
 				"mountpnt":"usr/lpp/zowe/",
-				"leaves":"bin/IBM"
+				"leaves":"IBM"
 			},
 			{
 				"dsname":"AZWEAUTH",

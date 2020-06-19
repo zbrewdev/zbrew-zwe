@@ -413,6 +413,8 @@ SetupRACF() {
 		racfPermitUsers "DATASET" "'$ZWE1B0_HLQ.$wildcard'" "ALTER" "$ZWE1B0_SYSPROG"
 		chk "$?" "Unable to configure ZWE1B0"
 	fi
+  	racfRefreshClasses "FACILITY STARTED"
+	chk "\$?" "Unable to configure ZWE1B0"
 
 	return 0
 }
