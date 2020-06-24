@@ -22,7 +22,20 @@
 			"ZWE1B0_ADMINDEP": "",
 			"ZWE1B0_STCGDEP":  "",
 			"ZWE1B0_STCUDEP":  "",
-			"ZWE1B0_FACACID":  ""
+			"ZWE1B0_FACACID":  "",
+
+			"ZWE1B0_HOSTNAME":  "10.1.1.2",
+			"ZWE1B0_IPADDRESS":  "10.1.1.2",
+			"ZWE1B0_VERIFY_CERTIFICATES":  "true",
+			"ZWE1B0_EXTERNAL_CERTIFICATE":  "",
+			"ZWE1B0_CERTIFICATE_ALIAS":  "",
+			"ZBREW_CERTIFICATE_AUTHORITIES":  "",
+			"ZOS240_ZOSMF_CERTIFICATE":  "",
+			"ZWE1B0_KEYSTORE_PASSWORD":  "PASSWORD",
+			"ZWE1B0_KEYSTORE_DIRECTORY":  "/global/zowe/keystore",
+			"ZWE1B0_KEYSTORE_ALIAS":  "localhost",
+
+			"ZWE1B0_LOGDIR":  "/global/zowe/logs"
                  }
 	}]
 }

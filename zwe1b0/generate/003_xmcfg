@@ -1,0 +1,71 @@
+#!/bin/sh
+
+if ! [ $# -eq 2 ]; then
+	echo "Syntax: 003_xmemcfg ENABLE|DISABLE <output-script>" >&2
+	exit 8
+fi
+verb="$1"
+script="$2"
+
+zbrew=`whence zbrew`
+zbrewdir=${zbrew%/*}
+zbrewroot=${zbrewdir%/*}
+
+cat << EOF >${script}
+#!/bin/sh
+#set -x
+export PATH=${zbrewdir}:\$PATH
+. zbrewsetswenv zwe1b0
+EOF
+
+if [ $? -gt 0 ]; then
+	echo "Unable to create ZWE1B0 Update script: ${script}." >&2
+	exit 16
+fi
+chmod u+x "${script}"
+
+if [ "${verb}" = "DISABLE" ]; then
+	echo "Not implemented yet" >&2
+	exit 16
+fi
+
+cat <<'EOF' >>${script}
+set +x
+authlib="${ZBREW_TGT_HLQ}ZWE1B0.SZWEAUTH"
+srclib="${ZBREW_TGT_HLQ}ZWE1B0.SZWESAMP"
+parmlib="${ZBREW_TGT_HLQ}PARMLIB"
+proclib="${ZBREW_TGT_HLQ}PROCLIB"
+
+drm -f $parmlib $proclib
+dtouch $parmlib
+chk "$?" "Unable to allocate PARMLIB dataset: ${parmlib}"
+dtouch $proclib
+chk "$?" "Unable to allocate PROCLIB dataset: ${proclib}"
+
+ZOWE_ROOT="${ZBREW_TGT_ZFSROOT}/usr/lpp/zowe/"
+
+swesip=`cat "//'${srclib}(ZWESIP00)'"`
+
+sijcl=`cat "//'${srclib}(ZWESISTC)'"`
+sijcl=`jclReplaceDD "${sijcl}" "ZWESIS01" "STEPLIB" "${ZBREW_TGT_HLQ}ZWE1B0.SZWEAUTH"`
+sijcl=`jclReplaceDD "${sijcl}" "ZWESIS01" "PARMLIB" "${parmlib}"`
+
+sajcl=`cat "//'${srclib}(ZWESASTC)'"`
+sajcl=`jclReplaceDD "${sajcl}" "ZWESAUX" "STEPLIB" "${ZBREW_TGT_HLQ}ZWE1B0.SZWEAUTH"`
+
+apfregistrar zwe1b0 "ENABLE" "${authlib}"
+chk "$?" "Unable to APF Authorize ${authlib}"
+
+procregistrar zwe1b0 "ENABLE" ZWESISTC "${sijcl}"
+chk "$?" "Unable to register proclib member ${proclib}(ZWESISTC)"
+
+procregistrar zwe1b0 "ENABLE" ZWESASTC "${sajcl}"
+chk "$?" "Unable to register proclib member ${proclib}(ZWESASTC)"
+
+parmregistrar zwe1b0 "ENABLE" ZWESIP00 "${zwesip}"
+chk "$?" "Unable to register parmlib ${parmlib}(ZWESIP00)"
+
+exit $?
+EOF
+
+exit 0  
