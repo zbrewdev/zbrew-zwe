@@ -51,9 +51,6 @@ EOF
 fi
 
 cat <<'EOF' >>${script}
-apfregistrar zwe1b0 "${verb}" "${authlib}"
-chk "$?" "Unable to ${verb} APF Authorization of ${authlib}"
-
 procregistrar zwe1b0 "${verb}" ZWESISTC "${sijcl}"
 chk "$?" "Unable to ${verb} proclib member ${proclib}(ZWESISTC)"
 
@@ -65,6 +62,14 @@ profftr="//* ZWE1B0 end */"
 
 registrar "ZWE1B0" "${verb}" "${parmlib}" "ZWESIP00" "$profhdr" "$profftr" "//*" "*/" "${zwesip}"
 chk "$?" "Unable to ${verb} ${parmlib}(ZWESIP00)"
+
+apfregistrar zwe1b0 "${verb}" "${authlib}"
+chk "$?" "Unable to ${verb} APF Authorization of ${authlib}"
+ 
+pptText="PPT PGMNAME(ZWESIS01) KEY(4) NOSWAP
+PPT PGMNAME(ZWESAUX) KEY(4) NOSWAP"
+pptregistrar zwe1b0 "${verb}" "${pptText}"
+chk "$?" "Unable to ${verb} PPT entries"
 
 exit $?
 
