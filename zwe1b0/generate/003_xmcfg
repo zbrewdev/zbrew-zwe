@@ -14,8 +14,15 @@ zbrewroot=${zbrewdir%/*}
 cat << EOF >${script}
 #!/bin/sh
 #set -x
+export verb="${verb}"
 export PATH=${zbrewdir}:\$PATH
 . zbrewsetswenv zwe1b0
+
+set +x
+authlib="\${ZBREW_TGT_HLQ}ZWE1B0.SZWEAUTH"
+srclib="\${ZBREW_TGT_HLQ}ZWE1B0.SZWESAMP"
+parmlib="\${ZBREW_TGT_HLQ}PARMLIB"
+proclib="\${ZBREW_TGT_HLQ}PROCLIB"
 EOF
 
 if [ $? -gt 0 ]; then
@@ -24,48 +31,42 @@ if [ $? -gt 0 ]; then
 fi
 chmod u+x "${script}"
 
-if [ "${verb}" = "DISABLE" ]; then
-	echo "Not implemented yet" >&2
-	exit 16
+if [ "${verb}" = "ENABLE" ]; then
+cat <<'EOF' >>${script}
+	swesip=`cat "//'${srclib}(ZWESIP00)'"`
+
+	sijcl=`cat "//'${srclib}(ZWESISTC)'"`
+	sijcl=`jclReplaceDD "${sijcl}" "ZWESIS01" "STEPLIB" "${ZBREW_TGT_HLQ}ZWE1B0.SZWEAUTH"`
+	sijcl=`jclReplaceDD "${sijcl}" "ZWESIS01" "PARMLIB" "${parmlib}"`
+
+	sajcl=`cat "//'${srclib}(ZWESASTC)'"`
+	sajcl=`jclReplaceDD "${sajcl}" "ZWESAUX" "STEPLIB" "${ZBREW_TGT_HLQ}ZWE1B0.SZWEAUTH"`
+EOF
+else
+cat <<'EOF' >>${script}
+	swesip=''
+	sijcl=''
+	sajcl=''
+EOF
 fi
 
 cat <<'EOF' >>${script}
-set +x
-authlib="${ZBREW_TGT_HLQ}ZWE1B0.SZWEAUTH"
-srclib="${ZBREW_TGT_HLQ}ZWE1B0.SZWESAMP"
-parmlib="${ZBREW_TGT_HLQ}PARMLIB"
-proclib="${ZBREW_TGT_HLQ}PROCLIB"
+apfregistrar zwe1b0 "${verb}" "${authlib}"
+chk "$?" "Unable to ${verb} APF Authorization of ${authlib}"
 
-drm -f $parmlib $proclib
-dtouch $parmlib
-chk "$?" "Unable to allocate PARMLIB dataset: ${parmlib}"
-dtouch $proclib
-chk "$?" "Unable to allocate PROCLIB dataset: ${proclib}"
+procregistrar zwe1b0 "${verb}" ZWESISTC "${sijcl}"
+chk "$?" "Unable to ${verb} proclib member ${proclib}(ZWESISTC)"
 
-ZOWE_ROOT="${ZBREW_TGT_ZFSROOT}/usr/lpp/zowe/"
+procregistrar zwe1b0 "${verb}" ZWESASTC "${sajcl}"
+chk "$?" "Unable to ${verb} proclib member ${proclib}(ZWESASTC)"
 
-swesip=`cat "//'${srclib}(ZWESIP00)'"`
+profhdr="//* ZWE1B0 start */"
+profftr="//* ZWE1B0 end */"
 
-sijcl=`cat "//'${srclib}(ZWESISTC)'"`
-sijcl=`jclReplaceDD "${sijcl}" "ZWESIS01" "STEPLIB" "${ZBREW_TGT_HLQ}ZWE1B0.SZWEAUTH"`
-sijcl=`jclReplaceDD "${sijcl}" "ZWESIS01" "PARMLIB" "${parmlib}"`
-
-sajcl=`cat "//'${srclib}(ZWESASTC)'"`
-sajcl=`jclReplaceDD "${sajcl}" "ZWESAUX" "STEPLIB" "${ZBREW_TGT_HLQ}ZWE1B0.SZWEAUTH"`
-
-apfregistrar zwe1b0 "ENABLE" "${authlib}"
-chk "$?" "Unable to APF Authorize ${authlib}"
-
-procregistrar zwe1b0 "ENABLE" ZWESISTC "${sijcl}"
-chk "$?" "Unable to register proclib member ${proclib}(ZWESISTC)"
-
-procregistrar zwe1b0 "ENABLE" ZWESASTC "${sajcl}"
-chk "$?" "Unable to register proclib member ${proclib}(ZWESASTC)"
-
-parmregistrar zwe1b0 "ENABLE" ZWESIP00 "${zwesip}"
-chk "$?" "Unable to register parmlib ${parmlib}(ZWESIP00)"
+registrar "ZWE1B0" "${verb}" "${parmlib}" "ZWESIP00" "$profhdr" "$profftr" "//*" "*/" "${zwesip}"
+chk "$?" "Unable to ${verb} ${parmlib}(ZWESIP00)"
 
 exit $?
-EOF
 
+EOF
 exit 0  
