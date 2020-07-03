@@ -1,23 +1,108 @@
 #!/bin/sh
 
 if ! [ $# -eq 2 ]; then
-	echo "Syntax: 002_cert ENABLE|DISABLE <output-script>" >&2
+	echo "Syntax: 004_crttok ENABLE|DISABLE <output-script>" >&2
 	exit 8
 fi
-
 verb="$1"
 script="$2"
+
 zbrew=`whence zbrew`
 zbrewdir=${zbrew%/*}
 zbrewroot=${zbrewdir%/*}
 
-cat <<'EOF' >${script}
+cat << EOF >${script}
 #!/bin/sh
+#set -x
+export verb="${verb}"
+export PATH=${zbrewdir}:\$PATH
+. zbrewsetswenv zwe1b0
+
+set +x
+EOF
+
+if [ $? -gt 0 ]; then
+	echo "Unable to create ZWE1B0 Update script: ${script}." >&2
+	exit 16
+fi
+chmod u+x "${script}"
+
+if [ "${verb}" = "DISABLE" ]; then
+cat <<'EOF' >>${script}
+SetupCertificates() {
+	return 0
+}
+SetupRACF() {
+	return 0
+}
+SetupTopSecret() {
+	echo "crttok: Need to implement TopSecret ENABLE" >&2
+	return 8
+}
+SetupACF2() {
+	echo "crttok: Need to implement ACF2 ENABLE" >&2
+	return 8
+}
+
+EOF
+else
+cat <<'EOF' >>${script}
+SetupRACF() {
+	export PKCS11_TOKEN_NAME="${ZWE1B0_PKCS11_TOKEN_NAME}"  
+	export PKCS11_TOKEN_LABEL="${ZWE1B0_PKCS11_TOKEN_LABEL}"  
+	export user="${ZWE1B0_PKCS11_TOKEN_CREATOR}"  
+	if `undefinedProperty "${PKCS11_TOKEN_NAME}"` ; then
+		echo "crttok: ZWE1B0_PKCS11_TOKEN_NAME must be defined" >&2
+		return 8
+	fi
+	if `undefinedProperty "${PKCS11_TOKEN_LABEL}"` ; then
+		echo "crttok: ZWE1B0_PKCS11_TOKEN_LABEL must be defined" >&2
+		return 8
+	fi
+	if `undefinedProperty "${user}"` ; then
+		echo "crttok: ZWE1B0_PKCS11_TOKEN_CREATOR must be defined" >&2
+		return 8
+	fi
+
+	racfSetGenericClasses "CRYPTOZ"
+	chk "$?" "Unable to configure ZWE1B0"
+	racfActivateAndShareClasses "CRYPTOZ"
+	chk "$?" "Unable to configure ZWE1B0"
+
+	if ! `racfProfileExists "CRYPTOZ" "SO.**"` ; then
+		issueTSO "RDEFINE CRYPTOZ SO.** UACC(NONE)"
+		chk "$?" "Unable to define CRYPTOZ profile SO.**"
+	fi
+	if ! `racfProfileExists "CRYPTOZ" "USER.${PKCS11_TOKEN_NAME}"` ; then
+		issueTSO "RDEFINE CRYPTOZ USER.${PKCS11_TOKEN_NAME} UACC(NONE)"
+		chk "$?" "Unable to define CRYPTOZ profile USER.${PKCS11_TOKEN_NAME}"
+	fi
+	racfPermitUsers "CRYPTOZ" "SO.**" "UPDATE" "${user}"
+	chk "$?" "Unable to configure ZWE1B0"
+
+	racfPermitUsers "CRYPTOZ" "USER.${PKCS11_TOKEN_NAME}" "UPDATE" "${user}"
+	chk "$?" "Unable to configure ZWE1B0"
+
+	racfRefreshClasses "CRYPTOZ"
+	chk "$?" "Unable to configure ZWE1B0"
+
+	return 0
+}
+
+SetupTopSecret() {
+	echo "crttok: Need to implement TopSecret DISABLE" >&2
+	return 8
+}
+
+SetupACF2() {
+	echo "crttok: Need to implement ACF2 DISABLE" >&2
+	return 8
+}
 SetupCertificates() {
 	ZOWE_ROOT="${ZBREW_TGT_ZFSROOT}/usr/lpp/zowe/"
 	zbrewZoweConfigFile="${ZBREW_TMP}/zoweconfig.$$.tmp"
 	echo "
-		HOSTNAME=${ZWE1B0_HOSTNAME}
+              	HOSTNAME=${ZWE1B0_HOSTNAME}
 		IPADDRESS=${ZWE1B0_IPADDRESS}
 		VERIFY_CERTIFICATES=${ZWE1B0_VERIFY_CERTIFICATES}
 		EXTERNAL_CERTIFICATE=${ZWE1B0_EXTERNAL_CERTIFICATE}
@@ -30,19 +115,34 @@ SetupCertificates() {
 		ZOWE_USER_ID=${ZWE1B0_ZOWEUSER}
 		ZOWE_GROUP_ID=${ZWE1B0_ADMINGRP}
 	" >${zbrewZoweConfigFile}
-	${ZOWE_ROOT}/bin/zowe-setup-certificates.sh -p ${zbrewZoweConfigFile}    
+	${ZOWE_ROOT}/bin/zowe-setup-certificates.sh -p ${zbrewZoweConfigFile}
 
 	return 0
 }
-
 EOF
+fi
 
-chmod u+x "${script}"
-cat << EOF >>${script}
-export PATH=${zbrewdir}:\$PATH
+cat <<'EOF' >>${script}
 . zbrewsetswenv zwe1b0
 #set -x
-SetupCertificates  
+sp=`secmgr`
+if [ "${sp}" = "RCVT" ]; then                                       
+        SetupRACF
+elif [ "${sp}" = "TSS" ]; then
+        SetupTopSecret                                               
+elif [ "${sp}" = "ACF2" ]; then                                     
+        SetupACF2
+else
+        echo "Error: Unsupported security manager: ${sp}" >&2        
+        exit 16                                                      
+fi
+rc=$?
+if [ $rc -gt 0 ]; then
+	exit $rc
+fi
+
+SetupCertificates
 exit $?
+
 EOF
-exit 0
+exit 0  

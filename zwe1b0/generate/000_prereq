@@ -1,0 +1,114 @@
+#!/bin/sh
+# Check that pre-req software is installed and configured on the system
+#
+
+if ! [ $# -eq 2 ]; then
+	echo "Syntax: 000_prereq ENABLE|DISABLE <output-script>" >&2
+	exit 8
+fi
+
+verb="$1"
+script="$2"
+zbrew=`whence zbrew`
+zbrewdir=${zbrew%/*}
+zbrewroot=${zbrewdir%/*}
+
+cat <<'EOF' >${script}
+#!/bin/sh   
+CreateCKDS() {
+	return 0
+}
+CreatePKDS() {
+	return 0
+}
+CreateTKDS() {
+	cluster="CSF.SCSFTKDS"
+
+	err=${ZBREW_TMP}/csftkds.$$.err
+	touch "${err}"
+	mvscmdauth --pgm=IDCAMS --sysprint=* --sysin=stdin >"${err}" <<zz
+  DEFINE CLUSTER (NAME(${cluster}) -
+                  RECORDS(100 50)            -
+                  RECORDSIZE(2200,32756)     -
+                  KEYS(72 0)                 -
+                  FREESPACE(0,0)             -
+                  SPANNED                    -
+                  SHAREOPTIONS(2,3))         -
+            DATA (NAME(${cluster}.DATA) -
+                  BUFFERSPACE(100000)        -
+                  ERASE)                     -
+           INDEX (NAME(${cluster}.INDEX))
+zz
+	rc=$?
+	if [ $rc -gt 0 ]; then
+		echo "CreateTKDS: Unable to create VSAM cluster ${cluster}" >&2
+		cat "${err}" >&2
+		return $rc
+	fi
+
+	rm -f "${err}"
+	touch "${err}"
+
+# REPRO TKDS dataset
+
+	reprods=`mvstmp $(hlq)`
+	drm -f "${reprods}"
+	dtouch -tseq -rfb -l156 "${reprods}"
+	mvscmd --pgm=IEBGENER --sysprint=* --sysut1=dummy --sysut2="${reprods}" --sysin=stdin >"${err}" <<zz
+  GENERATE MAXFLDS=10,MAXLITS=156
+  RECORD FIELD=(20,X'0000000000000000000000000000000000000000',,1),
+         FIELD=(20,X'0000000000000000000000000000000000000000',,21),
+         FIELD=(20,X'E3C8C4D900000000000000000000000000000000',,41),
+         FIELD=(20,X'0000000000000000000000000000000000000000',,61),
+         FIELD=(16,X'00000000000000000000000000000000',,81),
+         FIELD=(16,X'00000000000000000000000000000000',,97),
+         FIELD=(4,X'0000009C',,113),
+         FIELD=(16,X'00000000000000000000000000000000',,117),
+         FIELD=(20,X'0000000000000000000000000000000000000000',,133),
+         FIELD=(4,X'00000200',,153) 
+zz
+	rc=$?
+	if [ $rc -gt 0 ]; then
+		echo "CreateTKDS: Unable to generate repro file for ${cluster}" >&2
+		cat "${err}" >&2
+		return $rc
+	fi
+	
+	mvscmdauth --pgm=IDCAMS --sysprint=* --sysin=stdin --sysdata="${reprods}" >"${err}" <<zz
+  REPRO INFILE(SYSDATA) -
+  OUTDATASET(${cluster})
+zz
+	rc=$?
+	if [ $rc -gt 0 ]; then
+		echo "CreateTKDS: Unable to repro ${reprods} to ${cluster}" >&2
+		cat "${err}" >&2
+		return $rc
+	fi
+	rm -f "${err}"
+	drm -f "${reprods}"
+
+	return 0
+}
+
+EOF
+chmod u+x "${script}"
+
+cat << EOF >>${script}
+export PATH=${zbrewdir}:\$PATH
+. zbrewsetswenv zwe1b0
+EOF
+
+cat <<'EOF' >>${script}
+#set -x
+opercmd 'd icsf,kds' >${icsfstatus}
+# CSFM669I DISPLAY ICSF command failed: ICSF address space is not active
+CreateTKDS "${tkdsDataset}"
+rc=$?
+if [ $rc -gt 0 ]; then
+	exit $rc
+fi
+exit 0
+EOF
+
+exit 0
+

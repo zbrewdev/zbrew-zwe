@@ -35,7 +35,12 @@
 			"ZWE1B0_KEYSTORE_DIRECTORY":  "/global/zowe/keystore",
 			"ZWE1B0_KEYSTORE_ALIAS":  "localhost",
 
-			"ZWE1B0_LOGDIR":  "/global/zowe/logs"
+			"ZWE1B0_LOGDIR":  "/global/zowe/logs",
+			"ZWE1B0_INSTANCE_ROOT":  "/global/zowe/instance",
+
+			"ZWE1B0_PKCS11_TOKEN_CREATOR": "IBMUSER",
+			"ZWE1B0_PKCS11_TOKEN_NAME": "ZOWETKN",
+			"ZWE1B0_PKCS11_TOKEN_LABEL": "ZOWELBL"
                  }
 	}]
 }

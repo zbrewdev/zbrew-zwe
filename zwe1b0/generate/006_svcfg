@@ -1,0 +1,46 @@
+#!/bin/sh
+
+if ! [ $# -eq 2 ]; then
+	echo "Syntax: 004_cfgcfg ENABLE|DISABLE <output-script>" >&2
+	exit 8
+fi
+verb="$1"
+script="$2"
+
+zbrew=`whence zbrew`
+zbrewdir=${zbrew%/*}
+zbrewroot=${zbrewdir%/*}
+
+cat << EOF >${script}
+#!/bin/sh
+#set -x
+export verb="${verb}"
+export PATH=${zbrewdir}:\$PATH
+. zbrewsetswenv zwe1b0
+
+set +x
+proclib="\${ZBREW_TGT_HLQ}PROCLIB"
+zoweinstancedir="\${ZWE1B0_INSTANCE_ROOT}"
+EOF
+
+if [ $? -gt 0 ]; then
+	echo "Unable to create ZWE1B0 Update script: ${script}." >&2
+	exit 16
+fi
+chmod u+x "${script}"
+
+if [ "${verb}" = "ENABLE" ]; then
+cat <<'EOF' >>${script}
+	decho "//* ZWESVSTC: Started task to run Zowe
+//ZWESVSTC   PROC INSTANCE='${zoweinstancedir}'
+//*EXPORT EXPORT SYMLIST=*
+//ZOWESTEP EXEC PGM=BPXBATSL,REGION=0M,TIME=NOLIMIT,
+//  PARM='PGM /bin/sh &INSTANCE/bin/internal/run-zowe.sh'
+//STDOUT   DD SYSOUT=*
+//STDERR   DD SYSOUT=*" "${proclib}(ZWESVSTC)"
+EOF
+fi
+exit $?
+
+EOF
+exit 0  
