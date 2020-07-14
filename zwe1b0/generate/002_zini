@@ -1,0 +1,65 @@
+#!/bin/sh
+
+if ! [ $# -eq 2 ]; then
+	echo "Syntax: 002_zini ENABLE|DISABLE <output-script>" >&2
+	exit 8
+fi
+verb="$1"
+script="$2"
+
+zbrew=`whence zbrew`
+zbrewdir=${zbrew%/*}
+zbrewroot=${zbrewdir%/*}
+
+cat << EOF >${script}
+#!/bin/sh
+#set -x
+export verb="${verb}"
+export PATH=${zbrewdir}:\$PATH
+. zbrewsetswenv zwe1b0
+
+set +x
+zowedir="\${ZBREW_TGT_ZFSROOT}usr/lpp/zowe"
+zoweinstancedir="\${ZWE1B0_INSTANCE_ROOT}"
+EOF
+
+if [ $? -gt 0 ]; then
+	echo "Unable to create ZWE1B0 Update script: ${script}." >&2
+	exit 16
+fi
+chmod u+x "${script}"
+
+if [ "${verb}" = "ENABLE" ]; then
+cat <<'EOF' >>${script}
+	chkProperties "ZWE1B0_KEYSTORE_DIRECTORY ZWE1B0_LOGDIR ZWE1B0_INSTANCE_ROOT"
+	if [ $? -gt 0 ]; then
+		echo "002_zini failed." >&2
+		exit 8
+	fi
+
+	rm -rf "${ZWE1B0_KEYSTORE_DIRECTORY}" "${ZWE1B0_LOGDIR}" "${ZWE1B0_INSTANCE_ROOT}"
+	mkdir -p "${ZWE1B0_KEYSTORE_DIRECTORY}" "${ZWE1B0_LOGDIR}" "${ZWE1B0_INSTANCE_ROOT}"
+	rc=$?
+	if [ $rc -gt 0 ]; then
+		echo "Unable to create instance directories: ${ZWE1B0_KEYSTORE_DIRECTORY} ${ZWE1B0_LOGDIR} ${ZWE1B0_INSTANCE_ROOT}"
+		exit $rd
+	fi
+	chmod -R 770 "${ZWE1B0_KEYSTORE_DIRECTORY}" "${ZWE1B0_LOGDIR}" "${ZWE1B0_INSTANCE_ROOT}" 
+	if [ $rc -gt 0 ]; then
+		echo "Unable to change ownership for instance directories: ${ZWE1B0_KEYSTORE_DIRECTORY} ${ZWE1B0_LOGDIR} ${ZWE1B0_INSTANCE_ROOT}"
+		exit $rd
+	fi
+	chown ${ZWE1B0_ZOWEUSER}:${ZWE1B0_ADMINGRP} "${ZWE1B0_KEYSTORE_DIRECTORY}" "${ZWE1B0_LOGDIR}" "${ZWE1B0_INSTANCE_ROOT}" 
+	if [ $rc -gt 0 ]; then
+		echo "Unable to change ownership for instance directories: ${ZWE1B0_KEYSTORE_DIRECTORY} ${ZWE1B0_LOGDIR} ${ZWE1B0_INSTANCE_ROOT}"
+		exit $rd
+	fi
+EOF
+else
+cat <<'EOF' >>${script}
+#
+# Remove instance dir here ?
+#
+EOF
+fi
+exit 0  

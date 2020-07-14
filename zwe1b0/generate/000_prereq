@@ -99,14 +99,64 @@ export PATH=${zbrewdir}:\$PATH
 EOF
 
 cat <<'EOF' >>${script}
+#
+# Check that ICSF is properly configured for Zowe.
+# TBD - if not, create the dataset (see CreateTKDS, CreatePKDS, CreateCKDS)
+#
+chkICSF() {
+	opercmd 'd icsf,kds' 2>/dev/null | awk '
+		BEGIN { 
+			tkdsFound=0; 
+		} 
+		{ 
+			if ($1 == "TKDS") { 
+				if (NF == 2) {
+					tkdsFound=1; 
+				} else { 
+					print "TKDS not initialized"; 
+					exit 4; 
+				} 
+			}
+		} 
+		END { 
+			if (tkdsFound) { 
+				exit 0; 
+			} else { 
+				print "No TKDS Entry for ICSF"; 
+				exit 8; 
+			}
+		}' >&2
+	return $?
+}
+
+chkJava() {
+	return 0
+}
+
+chkNode() {
+	return 0
+}
+
+chkzOSMF() {
+	return 0
+}
+
 #set -x
-opercmd 'd icsf,kds' >${icsfstatus}
-# CSFM669I DISPLAY ICSF command failed: ICSF address space is not active
-CreateTKDS "${tkdsDataset}"
-rc=$?
-if [ $rc -gt 0 ]; then
-	exit $rc
-fi
+
+chkICSF	
+rcICSF=$?
+
+chkJava
+rcJava=$?
+
+chkNode
+rcNode=$?
+
+chkzOSMF
+rczOSMF=$?
+
+rc=$(( $rcICSF + $rcJava + $rcNode + $rczOSMF ))
+exit $rc
 exit 0
 EOF
 

@@ -4,3 +4,5 @@ zwe1b0/zwe1b0bom.json
 zwe1b0/zwe1b0req.json
 zwe1b0/zwe1b0config
 zwe1b0/zwe1b0deconfig
+zwe1b0/generate/*
+zwe1b0/zwe1b0props*.json

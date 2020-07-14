@@ -1,0 +1,66 @@
+#!/bin/sh
+
+if ! [ $# -eq 2 ]; then
+	echo "Syntax: 004_zicfg ENABLE|DISABLE <output-script>" >&2
+	exit 8
+fi
+verb="$1"
+script="$2"
+
+zbrew=`whence zbrew`
+zbrewdir=${zbrew%/*}
+zbrewroot=${zbrewdir%/*}
+
+cat << EOF >${script}
+#!/bin/sh
+#set -x
+export verb="${verb}"
+export PATH=${zbrewdir}:\$PATH
+. zbrewsetswenv zwe1b0
+
+set +x
+zowedir="\${ZBREW_TGT_ZFSROOT}usr/lpp/zowe"
+zoweinstancedir="\${ZWE1B0_INSTANCE_ROOT}"
+EOF
+
+if [ $? -gt 0 ]; then
+	echo "Unable to create ZWE1B0 Update script: ${script}." >&2
+	exit 16
+fi
+chmod u+x "${script}"
+
+if [ "${verb}" = "ENABLE" ]; then
+cat <<'EOF' >>${script}
+	chkProperties "ZBREW_JAVA_HOME ZBREW_NODE_HOME ZWE1B0_IPADDRESS" 
+	if [ $? -gt 0 ]; then
+		echo "004_zicfg failed." >&2
+		exit 8
+	fi
+	export JAVA_HOME="${ZBREW_JAVA_HOME}"
+	export NODE_HOME="${ZBREW_NODE_HOME}"
+	export ZOWE_EXPLORER_HOST="${ZWE1B0_IPADDRESS}"
+	export ZOWE_IP_ADDRESS="${ZWE1B0_IPADDRESS}"
+	export ZOWE_ZOSMF_HOST="${ZWE1B0_IPADDRESS}"
+
+	"${zowedir}/bin/zowe-configure-instance.sh" -c "${zoweinstancedir}"
+
+	cat <<NESTEOF >>"${zoweinstancedir}/instance.env"
+
+		CATALOG_PORT="${ZWE1B0_CATALOG_PORT}"
+		DISCOVERY_PORT="${ZWE1B0_DISCOVERY_PORT}"
+		GATEWAY_PORT="${ZWE1B0_GATEWAY_PORT}"
+		JOBS_API_PORT="${ZWE1B0_JOBS_API_PORT}"
+		FILES_API_PORT="${ZWE1B0_FILES_API_PORT}"
+		JES_EXPLORER_UI_PORT="${ZWE1B0_JES_EXPLORER_UI_PORT}"
+		MVS_EXPLORER_UI_PORT="${ZWE1B0_MVS_EXPLORER_UI_PORT}"
+		USS_EXPLORER_UI_PORT="${ZWE1B0_USS_EXPLORER_UI_PORT}"
+		ZOWE_ZLUX_SERVER_HTTPS_PORT="${ZWE1B0_ZOWE_ZLUX_SERVER_HTTPS_PORT}"
+		ZOWE_ZSS_SERVER_PORT="${ZWE1B0_ZOWE_ZSS_SERVER_PORT}"
+NESTEOF
+	a2e "${zoweinstancedir}/instance.env"
+EOF
+else
+cat <<'EOF' >>${script}
+EOF
+fi
+exit 0  

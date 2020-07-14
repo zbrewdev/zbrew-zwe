@@ -1,7 +1,7 @@
 #!/bin/sh
 
 if ! [ $# -eq 2 ]; then
-	echo "Syntax: 004_cfgcfg ENABLE|DISABLE <output-script>" >&2
+	echo "Syntax: 006svcfg ENABLE|DISABLE <output-script>" >&2
 	exit 8
 fi
 verb="$1"

@@ -376,18 +376,32 @@ SetupRACF() {
 		chk "$?" "Unable to define started task $ZWE1B0_XMEMSTC"
 	fi
 
-        if ! `racfProfileExists "FACILITY" "ZWEIS.IS"` ; then
-	        issueTSO "RDEFINE FACILITY ZWEIS.IS UACC(NONE)"
-  		chk "$?" "Unable to define profile ZWEIS.IS"
+        if ! `racfProfileExists "FACILITY" "ZWES.IS"` ; then
+	        issueTSO "RDEFINE FACILITY ZWES.IS UACC(NONE)"
+  		chk "$?" "Unable to define profile ZWES.IS"
         fi
-	racfPermitUsers "FACILITY" "ZWEIS.IS" "READ" "$ZWE1B0_ZOWEUSER" 
+	racfPermitUsers "FACILITY" "ZWES.IS" "READ" "$ZWE1B0_ZOWEUSER" 
 	chk "$?" "Unable to configure ZWE1B0"
 
         if ! `racfProfileExists "FACILITY" "BPX.SERVER"` ; then
 	        issueTSO "RDEFINE FACILITY BPX.SERVER UACC(NONE)"
   		chk "$?" "Unable to define profile BPX.SERVER"
         fi
-	racfPermitUsers "FACILITY" "BPX.SERVER" "READ" "$ZWE1B0_ZOWEUSER" 
+	racfPermitUsers "FACILITY" "BPX.SERVER" "UPDATE" "$ZWE1B0_ZOWEUSER" 
+	chk "$?" "Unable to configure ZWE1B0"
+
+        if ! `racfProfileExists "FACILITY" "BPX.DAEMON"` ; then
+	        issueTSO "RDEFINE FACILITY BPX.DAEMON UACC(NONE)"
+  		chk "$?" "Unable to define profile BPX.DAEMON"
+        fi
+	racfPermitUsers "FACILITY" "BPX.DAEMON" "UPDATE" "$ZWE1B0_ZOWEUSER" 
+	chk "$?" "Unable to configure ZWE1B0"
+
+        if ! `racfProfileExists "FACILITY" "BPX.JOBNAME"` ; then
+	        issueTSO "RDEFINE FACILITY BPX.JOBNAME UACC(NONE)"
+  		chk "$?" "Unable to define profile BPX.JOBNAME"
+        fi
+	racfPermitUsers "FACILITY" "BPX.JOBNAME" "READ" "$ZWE1B0_ZOWEUSER" 
 	chk "$?" "Unable to configure ZWE1B0"
 
         if ! `racfProfileExists "UNIXPRIV" "SUPERUSER.FILESYS"` ; then
