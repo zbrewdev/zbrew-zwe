@@ -130,14 +130,51 @@ chkICSF() {
 }
 
 chkJava() {
+	if `undefinedProperty $ZBREW_JAVA_HOME`; then
+		echo "000_prereq: need to specify ZBREW_JAVA_HOME to configure Zowe" >&2
+		return 4
+	fi
+	$ZBREW_JAVA_HOME/bin/java -version >/dev/null 2>&1
+	rc=$?
+	if [ $rc -gt 0 ]; then
+		echo "000_prereq: unable to run $ZBREW_JAVA_HOME/bin/java -version. Configure Java before configuring Zowe" >&2
+		return $rc
+	fi
 	return 0
 }
 
 chkNode() {
+	if `undefinedProperty $ZBREW_NODE_HOME`; then
+		echo "000_prereq: need to specify ZBREW_NODE_HOME to configure Zowe" >&2
+		return 4
+	fi
+	$ZBREW_NODE_HOME/bin/node --version >/dev/null
+	rc=$?
+	if [ $rc -gt 0 ]; then
+		echo "000_prereq: unable to run $ZBREW_NODE_HOME/bin/node --version. Configure Node.js before configuring Zowe" >&2
+		return $rc
+	fi
 	return 0
 }
 
 chkzOSMF() {
+	if `undefinedProperty $ZWE1B0_HOSTNAME`; then
+		echo "000_prereq: need to specify ZWE1B0_HOSTNAME to configure Zowe" >&2
+		return 4
+	fi
+	zosmfnetstat=`tsocmd netstat 2>/dev/null | grep IZUSVR | grep ".*Listen"`
+	rc=$?
+	if [ $rc -gt 0 ]; then
+		echo "000_prereq: unable to determine port z/OSMF (IZUSVR*) is listening on. Start z/OSMF before configuring Zowe" >&2
+		return 4
+	fi
+ 	zosmfqualifiedport=`echo "${zosmfnetstat}" | awk '{ print $4 }'`
+	zosmfport=${zosmfqualifiedport##*.}
+	httpsget "https://${ZWE1B0_HOSTNAME}:${zosmfport}/zosmf/info" >/dev/null
+	if [ $rc -gt 0 ]; then
+		echo "000_prereq: unable to connect to https://${ZWE1B0_HOSTNAME}:${zosmfport}/zosmf/info. Start z/OSMF before configuring Zowe" >&2
+		return 4
+	fi
 	return 0
 }
 
