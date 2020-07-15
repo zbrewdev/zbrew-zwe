@@ -31,11 +31,13 @@ chmod u+x "${script}"
 
 if [ "${verb}" = "ENABLE" ]; then
 cat <<'EOF' >>${script}
-	opercmd 'start zwesastc'
+	opercmd 'start zwesistc'
+	opercmd 'start zwesvstc'
 EOF
 else
 cat <<'EOF' >>${script}
-	opercmd 'cancel zwesastc'
+	opercmd 'cancel zwesvstc'
+	opercmd 'cancel zwesistc'
 EOF
 fi
 exit $?
